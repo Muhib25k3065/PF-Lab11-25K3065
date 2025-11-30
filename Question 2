@@ -1,0 +1,187 @@
+#include <stdio.h>
+#include <string.h>
+
+struct date {
+    int day, month, year;
+};
+
+struct transaction {
+    char type[20];      
+    float amount;
+    struct date t_date;  
+};
+
+struct bankAccount {
+    char name[50];
+    int accountNumber;
+    char accountType[20]; 
+    float balance;
+
+    float interestRate;
+    float minBalance;
+
+    struct date creationDate;
+    struct date lastTransaction;
+
+    struct transaction history[100];
+    int tCount;
+};
+
+void setAccountRules(struct bankAccount *acc) {
+    if (strcmp(acc->accountType, "Savings") == 0) {
+        acc->minBalance = 1000;
+        acc->interestRate = 4;
+    }
+    else if (strcmp(acc->accountType, "Current") == 0) {
+        acc->minBalance = 5000;
+        acc->interestRate = 0;
+    }
+    else if (strcmp(acc->accountType, "Fixed") == 0 ||
+             strcmp(acc->accountType, "FixedDeposit") == 0) {
+        acc->minBalance = 10000;
+        acc->interestRate = 7;
+    }
+}
+
+void addTransaction(struct bankAccount *acc, char type[], float amount, struct date d) {
+    strcpy(acc->history[acc->tCount].type, type);
+    acc->history[acc->tCount].amount = amount;
+    acc->history[acc->tCount].t_date = d;
+
+    acc->lastTransaction = d;
+    acc->tCount++;
+}
+
+void deposit(struct bankAccount *acc) {
+    float amount;
+    struct date d;
+
+    printf("Enter deposit amount: ");
+    scanf("%f", &amount);
+
+    printf("Enter transaction date (dd mm yyyy): ");
+    scanf("%d %d %d", &d.day, &d.month, &d.year);
+
+    acc->balance += amount;
+    addTransaction(acc, "Deposit", amount, d);
+
+    printf("Deposit successful. New balance = %.2f\n", acc->balance);
+}
+
+void withdraw(struct bankAccount *acc) {
+    float amount;
+    struct date d;
+
+    printf("Enter withdrawal amount: ");
+    scanf("%f", &amount);
+
+    if (acc->balance - amount < acc->minBalance) {
+        printf("Error: Cannot withdraw. Minimum balance rule violated!\n");
+        return;
+    }
+
+    printf("Enter transaction date (dd mm yyyy): ");
+    scanf("%d %d %d", &d.day, &d.month, &d.year);
+
+    acc->balance -= amount;
+    addTransaction(acc, "Withdrawal", amount, d);
+
+    printf("Withdrawal successful. New balance = %.2f\n", acc->balance);
+}
+
+void displayAccount(struct bankAccount acc) {
+    printf("\n--- Account Details ---\n");
+    printf("Name: %s\n", acc.name);
+    printf("Account Number: %d\n", acc.accountNumber);
+    printf("Type: %s\n", acc.accountType);
+    printf("Balance: %.2f\n", acc.balance);
+    printf("Interest Rate: %.2f%%\n", acc.interestRate);
+    printf("Minimum Balance: %.2f\n", acc.minBalance);
+
+    printf("Created on: %d-%02d-%02d\n",
+           acc.creationDate.day,
+           acc.creationDate.month,
+           acc.creationDate.year);
+
+    printf("Last Transaction: %d-%02d-%02d\n",
+           acc.lastTransaction.day,
+           acc.lastTransaction.month,
+           acc.lastTransaction.year);
+}
+
+void showHistory(struct bankAccount acc) {
+	int i;
+    printf("\n--- Transaction History ---\n");
+    for (i = 0; i < acc.tCount; i++) {
+        printf("%s of %.2f on %02d/%02d/%04d\n",
+               acc.history[i].type,
+               acc.history[i].amount,
+               acc.history[i].t_date.day,
+               acc.history[i].t_date.month,
+               acc.history[i].t_date.year);
+    }
+}
+
+int main() {
+    struct bankAccount acc;
+    acc.tCount = 0;
+
+    printf("Enter account holder name: ");
+    scanf("%s", acc.name);
+
+    printf("Enter account number: ");
+    scanf("%d", &acc.accountNumber);
+
+    printf("Enter account type (Savings / Current / Fixed): ");
+    scanf("%s", acc.accountType);
+
+    setAccountRules(&acc);
+
+    printf("Enter initial balance: ");
+    scanf("%f", &acc.balance);
+
+    printf("Enter account creation date (dd mm yyyy): ");
+    scanf("%d %d %d", &acc.creationDate.day, &acc.creationDate.month, &acc.creationDate.year);
+
+    acc.lastTransaction = acc.creationDate;
+
+    int choice;
+
+    while (1) {
+        printf("\n----- MENU -----\n");
+        printf("1. Deposit Money\n");
+        printf("2. Withdraw Money\n");
+        printf("3. Show Account Details\n");
+        printf("4. Show Transaction History\n");
+        printf("5. Exit\n");
+
+        printf("Enter your choice: ");
+        scanf("%d", &choice);
+
+        switch (choice) {
+            case 1:
+                deposit(&acc);
+                break;
+
+            case 2:
+                withdraw(&acc);
+                break;
+
+            case 3:
+                displayAccount(acc);
+                break;
+
+            case 4:
+                showHistory(acc);
+                break;
+
+            case 5:
+                return 0;
+
+            default:
+                printf("Invalid choice. Try again.\n");
+        }
+    }
+
+    return 0;
+}
